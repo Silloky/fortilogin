@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #    fortilogin.py
 #    Copyright (C) 2015 Stephane Lepin
@@ -17,17 +17,17 @@
 #    with this program. If not, see <https://www.gnu.org/licenses/>
 
 import sys
-import httplib
-import urllib2
+import http.client
+import urllib.request, urllib.error, urllib.parse
 import ssl
 import re
-from urllib import urlencode
-from urlparse import urlparse
+from urllib.parse import urlencode
+from urllib.parse import urlparse
 from getpass import getpass
 
 # Show usage info and exit if not arguments are given
 if len(sys.argv) < 2:
-	print "Usage : " + __file__+ " username [password]"
+	print(("Usage : " + __file__+ " username [password]"))
 	exit()
 
 username = sys.argv[1]
@@ -44,7 +44,7 @@ testRegex = "^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4]
 
 # Initial request to know if I'm behind a Fortinet captive portal
 # I'm using httplib to detect and avoid the automatic redirection performed by urllib
-conn = httplib.HTTPConnection(testHost)
+conn = http.client.HTTPConnection(testHost)
 conn.request('GET', '/')
 rep = conn.getresponse()
 
@@ -63,32 +63,32 @@ if rep.status == 303:
 	ssl_ctx.check_hostname = False
 	ssl_ctx.verify_mode = ssl.CERT_NONE
 
-	print "Not authenticated !"
-	print "Redirected to " + locationUrl
-	print "------"
-	print "Captive portal url : " + postUrl 
-	print "Magic token : " + magic
-	print "------"
+	print("Not authenticated !")
+	print(("Redirected to " + locationUrl))
+	print("------")
+	print(("Captive portal url : " + postUrl))
+	print(("Magic token : " + magic))
+	print("------")
 	
-	print "Authenticating as " + username
+	print(("Authenticating as " + username))
 
 	# Step 1 - call the full URL returned by the captive portal	
-	rep = urllib2.urlopen(locationUrl, context=ssl_ctx)	
-	print "Step 1 : " + str(rep.getcode())
+	rep = urllib.request.urlopen(locationUrl, context=ssl_ctx)	
+	print(("Step 1 : " + str(rep.getcode())))
 
 	# Step 2 - send a POST request to the "Yes, I agree" form
-	rep = urllib2.urlopen(postUrl, urlencode({'4Tredir': 'http://' + testHost, 'magic': magic, 'answer': 1}), context=ssl_ctx)
-	print "Step 2 : " + str(rep.getcode())
+	rep = urllib.request.urlopen(postUrl, urlencode({'4Tredir': 'http://' + testHost, 'magic': magic, 'answer': 1}), context=ssl_ctx)
+	print(("Step 2 : " + str(rep.getcode())))
 
 	# Step 3 - send a POST request with your credentials to the Authentication form
-	rep = urllib2.urlopen(postUrl, urlencode({'4Tredir': 'http://' + testHost, 'magic': magic, 'username': username, 'password': password}), context=ssl_ctx)
-	print "Step 3 : " + str(rep.getcode())
+	rep = urllib.request.urlopen(postUrl, urlencode({'4Tredir': 'http://' + testHost, 'magic': magic, 'username': username, 'password': password}), context=ssl_ctx)
+	print(("Step 3 : " + str(rep.getcode())))
 
 	testResponse = rep.read()
 	if re.compile(testRegex).match(testResponse) != None:
-		print "Authenticated !"
+		print("Authenticated !")
 	else:
-		print "Seems like something went wrong. Here's what I received :\n"
-		print testResponse
+		print("Seems like something went wrong. Here's what I received :\n")
+		print(testResponse)
 else:
-	print "Already authenticated"
+	print("Already authenticated")
